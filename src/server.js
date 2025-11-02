@@ -46,4 +46,16 @@ app.post("/ask-mistral", async (req, res) => {
   }
 });
 
+app.get("/hello", async (req, res) => {
+  try {
+    const data = await response.json({
+      message: "Olá mundo",
+    });
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro interno no servidor" });
+  }
+});
+
 app.listen(3000, () => console.log("✅ Servidor rodando na porta 3000"));
