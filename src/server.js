@@ -1,52 +1,79 @@
 import express from "express";
-import fetch from "node-fetch";
+import axios from "axios";
 import dotenv from "dotenv";
 
 dotenv.config();
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "10mb" })); // aceita imagens grandes base64
 
-// ✅ Endpoint que chama o Plant.id
 app.post("/plant-identify", async (req, res) => {
   try {
-    const response = await fetch("https://api.plant.id/v3/identification", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Api-Key": process.env.PLANTID_API_KEY,
-      },
-      body: JSON.stringify(req.body),
-    });
+    console.log("📸 Recebendo requisição de identificação...");
 
-    const data = await response.json();
-    res.json(data); // ✅ envia a resposta
+    const { images } = req.body;
+
+    const identifyResponse = await axios.post(
+      "https://api.plant.id/v2/identify",
+      {
+        images: images,
+        modifiers: ["similar_images"],
+        plant_details: [
+          "common_names",
+          "taxonomy",
+          "url",
+          "wiki_description",
+          "edible_parts",
+        ],
+        plant_language: "pt",
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Api-Key": process.env.PLANT_ID_API_KEY,
+        },
+      }
+    );
+
+    res.json(identifyResponse.data.suggestions || []);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro interno no servidor" });
+    console.error(
+      "❌ Erro ao identificar planta:",
+      err.response?.data || err.message
+    );
+    res.status(500).json({
+      error: "Erro interno ao identificar planta",
+      details: err.response?.data || err.message,
+    });
   }
 });
 
 // ✅ Endpoint que chama o Mistral AI
 app.post("/ask-mistral", async (req, res) => {
   try {
-    const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.MISTRAL_API_KEY}`,
-      },
-      body: JSON.stringify(req.body),
-    });
+    const { data } = await axios.post(
+      "https://api.mistral.ai/v1/chat/completions",
+      req.body,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.MISTRAL_API_KEY}`,
+        },
+      }
+    );
 
-    const data = await response.json();
-    res.json(data); // ✅ envia a resposta
+    res.json(data);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro interno no servidor" });
+    console.error(
+      "❌ Erro ao consultar Mistral:",
+      err.response?.data || err.message
+    );
+    res.status(500).json({
+      error: "Erro interno ao consultar Mistral",
+      details: err.response?.data || err.message,
+    });
   }
 });
 
-// ✅ Endpoint de teste simples
 app.get("/hello", (req, res) => {
   try {
     const data = { message: "Olá mundo" }; // cria o objeto de resposta
