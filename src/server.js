@@ -19,7 +19,7 @@ app.post("/plant-identify", async (req, res) => {
     });
 
     const data = await response.json();
-    res.json(data);
+    res.json(data); // ✅ envia a resposta
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro interno no servidor" });
@@ -39,19 +39,18 @@ app.post("/ask-mistral", async (req, res) => {
     });
 
     const data = await response.json();
-    res.json(data);
+    res.json(data); // ✅ envia a resposta
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro interno no servidor" });
   }
 });
 
-app.get("/hello", async (req, res) => {
+// ✅ Endpoint de teste simples
+app.get("/hello", (req, res) => {
   try {
-    const data = await response.json({
-      message: "Olá mundo",
-    });
-    res.json(data);
+    const data = { message: "Olá mundo" }; // cria o objeto de resposta
+    res.json(data); // envia a resposta
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro interno no servidor" });
